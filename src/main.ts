@@ -13,12 +13,34 @@ interface Task {
 
 let tasks: Task[] = JSON.parse(localStorage.getItem('tasks') || '[]')
 let currentFilter: 'all' | 'active' | 'completed' = 'all'
+let searchQuery: string = ''
+let theme: 'dark' | 'light' = (localStorage.getItem('theme') as 'dark' | 'light') || 'dark'
 
 document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
   <div class="container">
-    <h1>🚀 Project Launch Pad</h1>
-    <p class="subtitle">Live AWS CloudFront Deployment Test</p>
+    <div class="header-row">
+      <div>
+        <h1>🚀 Project Launch Pad</h1>
+        <p class="subtitle">Live AWS CloudFront Deployment Test</p>
+      </div>
+      <button id="theme-toggle" class="icon-btn" title="Toggle Theme">🌙</button>
+    </div>
     
+    <div class="stats-grid">
+      <div class="stat-card">
+        <span class="stat-num" id="total-count">0</span>
+        <span class="stat-label">Total</span>
+      </div>
+      <div class="stat-card">
+        <span class="stat-num" id="active-count">0</span>
+        <span class="stat-label">Active</span>
+      </div>
+      <div class="stat-card">
+        <span class="stat-num" id="completed-count">0</span>
+        <span class="stat-label">Done</span>
+      </div>
+    </div>
+
     <div class="input-group">
       <input type="text" id="task-input" placeholder="Enter a new task..." />
     </div>
@@ -37,6 +59,10 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
       <button id="add-btn">Add Task</button>
     </div>
 
+    <div class="search-group">
+      <input type="text" id="search-input" placeholder="🔍 Search tasks..." />
+    </div>
+
     <div class="filter-group">
       <button class="filter-btn active" data-filter="all">All</button>
       <button class="filter-btn" data-filter="active">Active</button>
@@ -48,19 +74,50 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
 `
 
 const input = document.getElementById('task-input') as HTMLInputElement
+const searchInput = document.getElementById('search-input') as HTMLInputElement
 const prioritySelect = document.getElementById('priority-select') as HTMLSelectElement
 const categorySelect = document.getElementById('category-select') as HTMLSelectElement
 const addBtn = document.getElementById('add-btn') as HTMLButtonElement
 const list = document.getElementById('task-list') as HTMLUListElement
 const filterBtns = document.querySelectorAll<HTMLButtonElement>('.filter-btn')
+const themeToggleBtn = document.getElementById('theme-toggle') as HTMLButtonElement
+
+const totalCountEl = document.getElementById('total-count')!
+const activeCountEl = document.getElementById('active-count')!
+const completedCountEl = document.getElementById('completed-count')!
+
+function applyTheme() {
+  document.body.className = theme === 'light' ? 'light-mode' : ''
+  themeToggleBtn.textContent = theme === 'light' ? '☀️' : '🌙'
+  localStorage.setItem('theme', theme)
+}
+
+themeToggleBtn.addEventListener('click', () => {
+  theme = theme === 'dark' ? 'light' : 'dark'
+  applyTheme()
+})
+
+function updateStats() {
+  const total = tasks.length
+  const completed = tasks.filter(t => t.completed).length
+  const active = total - completed
+
+  totalCountEl.textContent = total.toString()
+  activeCountEl.textContent = active.toString()
+  completedCountEl.textContent = completed.toString()
+}
 
 function renderTasks() {
   list.innerHTML = ''
   
   const filteredTasks = tasks.filter(task => {
-    if (currentFilter === 'active') return !task.completed
-    if (currentFilter === 'completed') return task.completed
-    return true
+    const matchesFilter = currentFilter === 'all' || 
+      (currentFilter === 'active' && !task.completed) || 
+      (currentFilter === 'completed' && task.completed)
+    
+    const matchesSearch = task.text.toLowerCase().includes(searchQuery.toLowerCase())
+    
+    return matchesFilter && matchesSearch
   })
 
   filteredTasks.forEach((task) => {
@@ -82,6 +139,7 @@ function renderTasks() {
     list.appendChild(li)
   })
 
+  updateStats()
   localStorage.setItem('tasks', JSON.stringify(tasks))
 }
 
@@ -97,6 +155,11 @@ addBtn.addEventListener('click', () => {
     input.value = ''
     renderTasks()
   }
+})
+
+searchInput.addEventListener('input', (e) => {
+  searchQuery = (e.target as HTMLInputElement).value
+  renderTasks()
 })
 
 filterBtns.forEach(btn => {
@@ -118,4 +181,5 @@ filterBtns.forEach(btn => {
   renderTasks()
 }
 
+applyTheme()
 renderTasks()

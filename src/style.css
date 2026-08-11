@@ -11,6 +11,13 @@ body {
   justify-content: center;
   align-items: center;
   min-height: 100vh;
+  transition: background-color 0.3s, color 0.3s;
+}
+
+/* Light Mode Variables Override */
+body.light-mode {
+  background-color: #f1f5f9;
+  color: #0f172a;
 }
 
 .container {
@@ -21,6 +28,19 @@ body {
   width: 100%;
   max-width: 500px;
   text-align: center;
+  transition: background 0.3s;
+}
+
+body.light-mode .container {
+  background: #ffffff;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+}
+
+.header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  text-align: left;
 }
 
 h1 {
@@ -34,7 +54,61 @@ h1 {
   font-size: 0.9rem;
 }
 
-.input-group {
+body.light-mode .subtitle {
+  color: #64748b;
+}
+
+.icon-btn {
+  background: transparent;
+  border: 1px solid #334155;
+  font-size: 1.2rem;
+  padding: 0.4rem 0.6rem;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+body.light-mode .icon-btn {
+  border-color: #cbd5e1;
+}
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
+}
+
+.stat-card {
+  background: #0f172a;
+  padding: 0.75rem;
+  border-radius: 8px;
+  border: 1px solid #334155;
+  display: flex;
+  flex-direction: column;
+}
+
+body.light-mode .stat-card {
+  background: #f8fafc;
+  border-color: #e2e8f0;
+}
+
+.stat-num {
+  font-size: 1.25rem;
+  font-weight: bold;
+  color: #3b82f6;
+}
+
+.stat-label {
+  font-size: 0.75rem;
+  color: #94a3b8;
+  text-transform: uppercase;
+}
+
+body.light-mode .stat-label {
+  color: #64748b;
+}
+
+.input-group, .search-group {
   margin-bottom: 0.75rem;
 }
 
@@ -49,10 +123,16 @@ input[type="text"] {
   outline: none;
 }
 
+body.light-mode input[type="text"] {
+  background: #f8fafc;
+  border-color: #cbd5e1;
+  color: #0f172a;
+}
+
 .meta-group {
   display: flex;
   gap: 0.5rem;
-  margin-bottom: 1.25rem;
+  margin-bottom: 0.75rem;
 }
 
 select {
@@ -64,6 +144,12 @@ select {
   color: #fff;
   outline: none;
   font-size: 0.85rem;
+}
+
+body.light-mode select {
+  background: #f8fafc;
+  border-color: #cbd5e1;
+  color: #0f172a;
 }
 
 .filter-group {
@@ -80,7 +166,17 @@ select {
   color: #94a3b8;
 }
 
+body.light-mode .filter-btn {
+  background: #e2e8f0;
+  color: #64748b;
+}
+
 .filter-btn.active {
+  background: #3b82f6;
+  color: white;
+}
+
+body.light-mode .filter-btn.active {
   background: #3b82f6;
   color: white;
 }
@@ -115,6 +211,11 @@ li {
   margin-bottom: 0.5rem;
   border-radius: 6px;
   border: 1px solid #334155;
+}
+
+body.light-mode li {
+  background: #f8fafc;
+  border-color: #e2e8f0;
 }
 
 .task-main {
@@ -167,6 +268,11 @@ li.completed span {
 .category-tag {
   background: #334155;
   color: #cbd5e1;
+}
+
+body.light-mode .category-tag {
+  background: #e2e8f0;
+  color: #475569;
 }
 
 .delete-btn {

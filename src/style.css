@@ -14,7 +14,6 @@ body {
   transition: background-color 0.3s, color 0.3s;
 }
 
-/* Light Mode Variables Override */
 body.light-mode {
   background-color: #f1f5f9;
   color: #0f172a;
@@ -22,11 +21,11 @@ body.light-mode {
 
 .container {
   background: #1e293b;
-  padding: 2.5rem;
+  padding: 2rem;
   border-radius: 12px;
   box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
   width: 100%;
-  max-width: 500px;
+  max-width: 520px;
   text-align: center;
   transition: background 0.3s;
 }
@@ -44,14 +43,14 @@ body.light-mode .container {
 }
 
 h1 {
-  margin: 0 0 0.5rem 0;
-  font-size: 1.8rem;
+  margin: 0 0 0.25rem 0;
+  font-size: 1.7rem;
 }
 
 .subtitle {
   color: #94a3b8;
-  margin-bottom: 1.5rem;
-  font-size: 0.9rem;
+  margin-bottom: 1.25rem;
+  font-size: 0.85rem;
 }
 
 body.light-mode .subtitle {
@@ -61,7 +60,7 @@ body.light-mode .subtitle {
 .icon-btn {
   background: transparent;
   border: 1px solid #334155;
-  font-size: 1.2rem;
+  font-size: 1.1rem;
   padding: 0.4rem 0.6rem;
   border-radius: 8px;
   cursor: pointer;
@@ -75,12 +74,12 @@ body.light-mode .icon-btn {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 0.75rem;
-  margin-bottom: 1.5rem;
+  margin-bottom: 1.25rem;
 }
 
 .stat-card {
   background: #0f172a;
-  padding: 0.75rem;
+  padding: 0.6rem;
   border-radius: 8px;
   border: 1px solid #334155;
   display: flex;
@@ -93,13 +92,13 @@ body.light-mode .stat-card {
 }
 
 .stat-num {
-  font-size: 1.25rem;
+  font-size: 1.2rem;
   font-weight: bold;
   color: #3b82f6;
 }
 
 .stat-label {
-  font-size: 0.75rem;
+  font-size: 0.7rem;
   color: #94a3b8;
   text-transform: uppercase;
 }
@@ -108,35 +107,12 @@ body.light-mode .stat-label {
   color: #64748b;
 }
 
-.input-group, .search-group {
-  margin-bottom: 0.75rem;
+.input-group {
+  margin-bottom: 0.5rem;
 }
 
-input[type="text"] {
-  width: 100%;
+input[type="text"], input[type="date"] {
   box-sizing: border-box;
-  padding: 0.75rem;
-  border-radius: 6px;
-  border: 1px solid #334155;
-  background: #0f172a;
-  color: #fff;
-  outline: none;
-}
-
-body.light-mode input[type="text"] {
-  background: #f8fafc;
-  border-color: #cbd5e1;
-  color: #0f172a;
-}
-
-.meta-group {
-  display: flex;
-  gap: 0.5rem;
-  margin-bottom: 0.75rem;
-}
-
-select {
-  flex: 1;
   padding: 0.6rem;
   border-radius: 6px;
   border: 1px solid #334155;
@@ -146,22 +122,59 @@ select {
   font-size: 0.85rem;
 }
 
+#task-input {
+  width: 100%;
+}
+
+body.light-mode input[type="text"], body.light-mode input[type="date"] {
+  background: #f8fafc;
+  border-color: #cbd5e1;
+  color: #0f172a;
+}
+
+.meta-group {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr auto;
+  gap: 0.4rem;
+  margin-bottom: 0.75rem;
+}
+
+select {
+  padding: 0.5rem;
+  border-radius: 6px;
+  border: 1px solid #334155;
+  background: #0f172a;
+  color: #fff;
+  outline: none;
+  font-size: 0.8rem;
+}
+
 body.light-mode select {
   background: #f8fafc;
   border-color: #cbd5e1;
   color: #0f172a;
 }
 
+.search-group {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.search-group input {
+  flex: 1;
+}
+
 .filter-group {
   display: flex;
   gap: 0.5rem;
   justify-content: center;
-  margin-bottom: 1.25rem;
+  margin-bottom: 1rem;
 }
 
 .filter-btn {
-  padding: 0.4rem 0.8rem;
-  font-size: 0.85rem;
+  padding: 0.35rem 0.75rem;
+  font-size: 0.8rem;
   background: #334155;
   color: #94a3b8;
 }
@@ -176,13 +189,8 @@ body.light-mode .filter-btn {
   color: white;
 }
 
-body.light-mode .filter-btn.active {
-  background: #3b82f6;
-  color: white;
-}
-
 button {
-  padding: 0.6rem 1rem;
+  padding: 0.5.5rem 0.85rem;
   border-radius: 6px;
   border: none;
   background: #3b82f6;
@@ -190,6 +198,7 @@ button {
   font-weight: bold;
   cursor: pointer;
   transition: all 0.2s;
+  font-size: 0.85rem;
 }
 
 button:hover {
@@ -199,7 +208,7 @@ button:hover {
 ul {
   list-style: none;
   padding: 0;
-  margin: 0;
+  margin: 0 0 1rem 0;
 }
 
 li {
@@ -207,10 +216,14 @@ li {
   justify-content: space-between;
   align-items: center;
   background: #0f172a;
-  padding: 0.75rem 1rem;
+  padding: 0.65rem 0.85rem;
   margin-bottom: 0.5rem;
   border-radius: 6px;
   border: 1px solid #334155;
+}
+
+li.overdue {
+  border-color: #ef4444;
 }
 
 body.light-mode li {
@@ -222,60 +235,105 @@ body.light-mode li {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  gap: 0.4rem;
+  gap: 0.35rem;
 }
 
 .task-content {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
+  gap: 0.6rem;
 }
 
-li.completed span {
+.task-title {
+  cursor: pointer;
+}
+
+li.completed .task-title {
   text-decoration: line-through;
   color: #64748b;
 }
 
 .badges {
   display: flex;
-  gap: 0.4rem;
-  margin-left: 1.75rem;
+  gap: 0.35rem;
+  margin-left: 1.5rem;
+  flex-wrap: wrap;
 }
 
 .badge {
-  font-size: 0.7rem;
-  padding: 0.15rem 0.4rem;
+  font-size: 0.65rem;
+  padding: 0.15rem 0.35rem;
   border-radius: 4px;
   font-weight: 600;
   text-transform: uppercase;
 }
 
-.priority-low {
-  background: #059669;
-  color: #ecfdf5;
+.priority-low { background: #059669; color: #ecfdf5; }
+.priority-medium { background: #d97706; color: #fffbeb; }
+.priority-high { background: #dc2626; color: #fef2f2; }
+
+.category-tag { background: #334155; color: #cbd5e1; }
+body.light-mode .category-tag { background: #e2e8f0; color: #475569; }
+
+.date-tag { background: #1e293b; color: #94a3b8; border: 1px solid #334155; }
+.badge-overdue { background: #ef4444 !important; color: #ffffff !important; }
+
+.btn-group {
+  display: flex;
+  gap: 0.25rem;
 }
 
-.priority-medium {
-  background: #d97706;
-  color: #fffbeb;
+.edit-btn, .delete-btn {
+  background: transparent;
+  padding: 0.2rem 0.4rem;
 }
 
-.priority-high {
-  background: #dc2626;
-  color: #fef2f2;
+.edit-mode-group {
+  display: flex;
+  gap: 0.4rem;
+  width: 100%;
 }
 
-.category-tag {
+.edit-mode-group input {
+  flex: 1;
+}
+
+.action-bar {
+  display: flex;
+  gap: 0.5rem;
+  justify-content: space-between;
+  border-top: 1px solid #334155;
+  padding-top: 1rem;
+}
+
+body.light-mode .action-bar {
+  border-top-color: #e2e8f0;
+}
+
+.secondary-btn {
   background: #334155;
   color: #cbd5e1;
+  font-size: 0.75rem;
+  padding: 0.4rem 0.65rem;
 }
 
-body.light-mode .category-tag {
-  background: #e2e8f0;
-  color: #475569;
+.secondary-btn:hover {
+  background: #475569;
 }
 
-.delete-btn {
-  background: transparent;
-  padding: 0.25rem 0.5rem;
+.label-btn {
+  display: inline-block;
+  cursor: pointer;
+  border-radius: 6px;
+  font-weight: bold;
+}
+
+.danger-btn {
+  background: #dc2626;
+  font-size: 0.75rem;
+  padding: 0.4rem 0.65rem;
+}
+
+.danger-btn:hover {
+  background: #b91c1c;
 }

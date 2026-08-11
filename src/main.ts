@@ -1,9 +1,14 @@
 import './style.css'
 
+type Priority = 'low' | 'medium' | 'high'
+type Category = 'work' | 'personal' | 'urgent'
+
 interface Task {
   id: string
   text: string
   completed: boolean
+  priority: Priority
+  category: Category
 }
 
 let tasks: Task[] = JSON.parse(localStorage.getItem('tasks') || '[]')
@@ -16,6 +21,19 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
     
     <div class="input-group">
       <input type="text" id="task-input" placeholder="Enter a new task..." />
+    </div>
+
+    <div class="meta-group">
+      <select id="priority-select">
+        <option value="low">🟢 Low Priority</option>
+        <option value="medium" selected>🟡 Medium Priority</option>
+        <option value="high">🔴 High Priority</option>
+      </select>
+      <select id="category-select">
+        <option value="work">💼 Work</option>
+        <option value="personal">👤 Personal</option>
+        <option value="urgent">⚡ Urgent</option>
+      </select>
       <button id="add-btn">Add Task</button>
     </div>
 
@@ -30,6 +48,8 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
 `
 
 const input = document.getElementById('task-input') as HTMLInputElement
+const prioritySelect = document.getElementById('priority-select') as HTMLSelectElement
+const categorySelect = document.getElementById('category-select') as HTMLSelectElement
 const addBtn = document.getElementById('add-btn') as HTMLButtonElement
 const list = document.getElementById('task-list') as HTMLUListElement
 const filterBtns = document.querySelectorAll<HTMLButtonElement>('.filter-btn')
@@ -47,9 +67,15 @@ function renderTasks() {
     const li = document.createElement('li')
     li.className = task.completed ? 'completed' : ''
     li.innerHTML = `
-      <div class="task-content">
-        <input type="checkbox" ${task.completed ? 'checked' : ''} onchange="toggleTask('${task.id}')" />
-        <span>${task.text}</span>
+      <div class="task-main">
+        <div class="task-content">
+          <input type="checkbox" ${task.completed ? 'checked' : ''} onchange="toggleTask('${task.id}')" />
+          <span>${task.text}</span>
+        </div>
+        <div class="badges">
+          <span class="badge priority-${task.priority}">${task.priority.toUpperCase()}</span>
+          <span class="badge category-tag">${task.category}</span>
+        </div>
       </div>
       <button class="delete-btn" onclick="removeTask('${task.id}')">❌</button>
     `
@@ -64,7 +90,9 @@ addBtn.addEventListener('click', () => {
     tasks.push({
       id: Date.now().toString(),
       text: input.value.trim(),
-      completed: false
+      completed: false,
+      priority: prioritySelect.value as Priority,
+      category: categorySelect.value as Category
     })
     input.value = ''
     renderTasks()

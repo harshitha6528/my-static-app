@@ -1,398 +1,163 @@
-:root {
-  font-family: Inter, System-ui, Avenir, Helvetica, Arial, sans-serif;
-  color-scheme: dark;
-  background-color: #0f172a;
-  color: #f8fafc;
+import './style.css'
+
+// ⚠️ MAKE SURE THIS MATCHES YOUR EXACT API GATEWAY ENDPOINT URL
+const API_URL = import './style.css'
+
+// Paste your full API Gateway URL here
+const API_URL = 'https://a1b2c3d4e5.execute-api.us-east-1.amazonaws.com/prod/tasks'
+type Priority = 'low' | 'medium' | 'high'
+type Category = 'work' | 'personal' | 'urgent'
+
+interface Task {
+  id: string
+  text: string
+  completed: boolean
+  priority: Priority
+  category: Category
+  createdAt: number
 }
 
-body {
-  margin: 0;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  min-height: 100vh;
-  transition: background-color 0.3s, color 0.3s;
+let tasks: Task[] = []
+
+document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
+  <div class="container">
+    <div class="header-row">
+      <div>
+        <h1>🚀 Project Launch Pad</h1>
+        <p class="subtitle">AWS Lambda + DynamoDB Cloud Backend</p>
+      </div>
+    </div>
+
+    <div id="error-banner" style="display:none; background:#ef4444; color:#fff; padding:0.6rem; border-radius:6px; margin-bottom:1rem; font-size:0.8rem; text-align:left;"></div>
+
+    <div class="input-group">
+      <input type="text" id="task-input" placeholder="Enter task title..." />
+    </div>
+
+    <div class="meta-group">
+      <select id="priority-select">
+        <option value="low">🟢 Low</option>
+        <option value="medium" selected>🟡 Medium</option>
+        <option value="high">🔴 High</option>
+      </select>
+      <select id="category-select">
+        <option value="work">💼 Work</option>
+        <option value="personal">👤 Personal</option>
+        <option value="urgent">⚡ Urgent</option>
+      </select>
+      <button id="add-btn">Add Task</button>
+    </div>
+
+    <ul id="task-list"></ul>
+  </div>
+`
+
+const input = document.getElementById('task-input') as HTMLInputElement
+const prioritySelect = document.getElementById('priority-select') as HTMLSelectElement
+const categorySelect = document.getElementById('category-select') as HTMLSelectElement
+const addBtn = document.getElementById('add-btn') as HTMLButtonElement
+const list = document.getElementById('task-list') as HTMLUListElement
+const errorBanner = document.getElementById('error-banner') as HTMLDivElement
+
+function showError(msg: string) {
+  errorBanner.style.display = 'block'
+  errorBanner.textContent = `⚠️ Error: ${msg}`
 }
 
-body.light-mode {
-  background-color: #f1f5f9;
-  color: #0f172a;
+function clearError() {
+  errorBanner.style.display = 'none'
+  errorBanner.textContent = ''
 }
 
-.container {
-  background: #1e293b;
-  padding: 2rem;
-  border-radius: 12px;
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
-  width: 100%;
-  max-width: 540px;
-  text-align: center;
-  transition: background 0.3s;
+// API CALLS
+async function fetchTasks() {
+  clearError()
+  try {
+    const res = await fetch(API_URL)
+    if (!res.ok) {
+      throw new Error(`HTTP ${res.status} ${res.statusText}`)
+    }
+    tasks = await res.json()
+    renderTasks()
+  } catch (err: any) {
+    showError(err.message || 'Failed to connect to AWS Backend')
+  }
 }
 
-body.light-mode .container {
-  background: #ffffff;
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+async function renderTasks() {
+  list.innerHTML = ''
+  tasks.forEach((task) => {
+    const li = document.createElement('li')
+    li.className = task.completed ? 'completed' : ''
+    li.innerHTML = `
+      <div class="task-content">
+        <input type="checkbox" ${task.completed ? 'checked' : ''} onchange="toggleTask('${task.id}')" />
+        <span>${task.text}</span>
+      </div>
+      <button class="delete-btn" onclick="removeTask('${task.id}')">❌</button>
+    `
+    list.appendChild(li)
+  })
 }
 
-.header-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  text-align: left;
+addBtn.addEventListener('click', async () => {
+  if (!input.value.trim()) return
+  clearError()
+
+  const newTask: Task = {
+    id: Date.now().toString(),
+    text: input.value.trim(),
+    completed: false,
+    priority: prioritySelect.value as Priority,
+    category: categorySelect.value as Category,
+    createdAt: Date.now()
+  }
+
+  try {
+    const res = await fetch(API_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(newTask)
+    })
+    if (!res.ok) throw new Error(`Failed to save task: HTTP ${res.status}`)
+    
+    input.value = ''
+    fetchTasks()
+  } catch (err: any) {
+    showError(err.message)
+  }
+})
+
+;(window as any).toggleTask = async (id: string) => {
+  clearError()
+  const task = tasks.find(t => t.id === id)
+  if (task) {
+    task.completed = !task.completed
+    try {
+      await fetch(API_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(task)
+      })
+      fetchTasks()
+    } catch (err: any) {
+      showError(err.message)
+    }
+  }
 }
 
-h1 {
-  margin: 0 0 0.25rem 0;
-  font-size: 1.7rem;
+;(window as any).removeTask = async (id: string) => {
+  clearError()
+  try {
+    await fetch(API_URL, {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id })
+    })
+    fetchTasks()
+  } catch (err: any) {
+    showError(err.message)
+  }
 }
 
-.subtitle {
-  color: #94a3b8;
-  margin-bottom: 1.25rem;
-  font-size: 0.85rem;
-}
-
-body.light-mode .subtitle { color: #64748b; }
-
-.icon-btn {
-  background: transparent;
-  border: 1px solid #334155;
-  font-size: 1.1rem;
-  padding: 0.4rem 0.6rem;
-  border-radius: 8px;
-  cursor: pointer;
-}
-
-body.light-mode .icon-btn { border-color: #cbd5e1; }
-
-.stats-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 0.75rem;
-  margin-bottom: 1.25rem;
-}
-
-.stat-card {
-  background: #0f172a;
-  padding: 0.6rem;
-  border-radius: 8px;
-  border: 1px solid #334155;
-  display: flex;
-  flex-direction: column;
-}
-
-body.light-mode .stat-card {
-  background: #f8fafc;
-  border-color: #e2e8f0;
-}
-
-.stat-num {
-  font-size: 1.2rem;
-  font-weight: bold;
-  color: #3b82f6;
-}
-
-.stat-label {
-  font-size: 0.7rem;
-  color: #94a3b8;
-  text-transform: uppercase;
-}
-
-body.light-mode .stat-label { color: #64748b; }
-
-.input-group, .notes-group {
-  margin-bottom: 0.5rem;
-}
-
-input[type="text"], input[type="date"], textarea {
-  box-sizing: border-box;
-  padding: 0.6rem;
-  border-radius: 6px;
-  border: 1px solid #334155;
-  background: #0f172a;
-  color: #fff;
-  outline: none;
-  font-size: 0.85rem;
-}
-
-textarea {
-  width: 100%;
-  height: 50px;
-  resize: vertical;
-  font-family: inherit;
-}
-
-#task-input { width: 100%; }
-
-body.light-mode input[type="text"], 
-body.light-mode input[type="date"],
-body.light-mode textarea {
-  background: #f8fafc;
-  border-color: #cbd5e1;
-  color: #0f172a;
-}
-
-.meta-group {
-  display: grid;
-  grid-template-columns: 1fr 1fr 1fr auto;
-  gap: 0.4rem;
-  margin-bottom: 0.75rem;
-}
-
-select {
-  padding: 0.5rem;
-  border-radius: 6px;
-  border: 1px solid #334155;
-  background: #0f172a;
-  color: #fff;
-  outline: none;
-  font-size: 0.8rem;
-}
-
-body.light-mode select {
-  background: #f8fafc;
-  border-color: #cbd5e1;
-  color: #0f172a;
-}
-
-.search-group {
-  display: flex;
-  gap: 0.5rem;
-  margin-bottom: 0.75rem;
-}
-
-.search-group input { flex: 1; }
-
-.filter-group {
-  display: flex;
-  gap: 0.5rem;
-  justify-content: center;
-  margin-bottom: 1rem;
-}
-
-.filter-btn {
-  padding: 0.35rem 0.75rem;
-  font-size: 0.8rem;
-  background: #334155;
-  color: #94a3b8;
-}
-
-body.light-mode .filter-btn {
-  background: #e2e8f0;
-  color: #64748b;
-}
-
-.filter-btn.active {
-  background: #3b82f6;
-  color: white;
-}
-
-button {
-  padding: 0.5rem 0.85rem;
-  border-radius: 6px;
-  border: none;
-  background: #3b82f6;
-  color: white;
-  font-weight: bold;
-  cursor: pointer;
-  transition: all 0.2s;
-  font-size: 0.85rem;
-}
-
-button:hover { background: #2563eb; }
-
-ul {
-  list-style: none;
-  padding: 0;
-  margin: 0 0 1rem 0;
-}
-
-li {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  background: #0f172a;
-  padding: 0.75rem;
-  margin-bottom: 0.6rem;
-  border-radius: 6px;
-  border: 1px solid #334155;
-}
-
-li.overdue { border-color: #ef4444; }
-
-body.light-mode li {
-  background: #f8fafc;
-  border-color: #e2e8f0;
-}
-
-.task-container {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 0.4rem;
-  width: 85%;
-  text-align: left;
-}
-
-.task-main {
-  display: flex;
-  flex-direction: column;
-  gap: 0.35rem;
-}
-
-.task-content {
-  display: flex;
-  align-items: center;
-  gap: 0.6rem;
-}
-
-.task-title {
-  cursor: pointer;
-  font-weight: 600;
-}
-
-li.completed .task-title {
-  text-decoration: line-through;
-  color: #64748b;
-}
-
-.task-notes {
-  margin: 0.2rem 0 0 1.5rem;
-  font-size: 0.78rem;
-  color: #94a3b8;
-}
-
-.badges {
-  display: flex;
-  gap: 0.35rem;
-  margin-left: 1.5rem;
-  flex-wrap: wrap;
-}
-
-.badge {
-  font-size: 0.65rem;
-  padding: 0.15rem 0.35rem;
-  border-radius: 4px;
-  font-weight: 600;
-  text-transform: uppercase;
-}
-
-.priority-low { background: #059669; color: #ecfdf5; }
-.priority-medium { background: #d97706; color: #fffbeb; }
-.priority-high { background: #dc2626; color: #fef2f2; }
-
-.category-tag { background: #334155; color: #cbd5e1; }
-body.light-mode .category-tag { background: #e2e8f0; color: #475569; }
-
-.date-tag { background: #1e293b; color: #94a3b8; border: 1px solid #334155; }
-.badge-overdue { background: #ef4444 !important; color: #ffffff !important; }
-
-/* Subtasks */
-.subtask-progress {
-  width: 100%;
-  height: 4px;
-  background: #334155;
-  border-radius: 2px;
-  margin-top: 0.4rem;
-  overflow: hidden;
-}
-
-.progress-bar {
-  height: 100%;
-  background: #10b981;
-  transition: width 0.3s;
-}
-
-.subtask-count {
-  font-size: 0.7rem;
-  color: #94a3b8;
-}
-
-.subtask-list {
-  width: 100%;
-  margin-top: 0.4rem;
-  padding-left: 1.5rem;
-  box-sizing: border-radius;
-}
-
-.subtask-item {
-  display: flex;
-  align-items: center;
-  gap: 0.4rem;
-  font-size: 0.78rem;
-  margin-bottom: 0.2rem;
-}
-
-.subtask-item.completed-sub span {
-  text-decoration: line-through;
-  color: #64748b;
-}
-
-.small-del {
-  background: transparent;
-  color: #ef4444;
-  padding: 0 0.2rem;
-  font-size: 0.8rem;
-}
-
-.add-subtask-row {
-  display: flex;
-  gap: 0.3rem;
-  margin-top: 0.3rem;
-}
-
-.add-subtask-row input {
-  font-size: 0.75rem;
-  padding: 0.25rem 0.4rem;
-  flex: 1;
-}
-
-.add-subtask-row button {
-  padding: 0.25rem 0.5rem;
-  font-size: 0.75rem;
-}
-
-.btn-group {
-  display: flex;
-  gap: 0.25rem;
-}
-
-.edit-btn, .delete-btn {
-  background: transparent;
-  padding: 0.2rem 0.4rem;
-}
-
-.action-bar {
-  display: flex;
-  gap: 0.5rem;
-  justify-content: space-between;
-  border-top: 1px solid #334155;
-  padding-top: 1rem;
-}
-
-body.light-mode .action-bar { border-top-color: #e2e8f0; }
-
-.secondary-btn {
-  background: #334155;
-  color: #cbd5e1;
-  font-size: 0.75rem;
-  padding: 0.4rem 0.65rem;
-}
-
-.secondary-btn:hover { background: #475569; }
-
-.label-btn {
-  display: inline-block;
-  cursor: pointer;
-  border-radius: 6px;
-  font-weight: bold;
-}
-
-.danger-btn {
-  background: #dc2626;
-  font-size: 0.75rem;
-  padding: 0.4rem 0.65rem;
-}
-
-.danger-btn:hover { background: #b91c1c; }
+fetchTasks()

@@ -1,7 +1,8 @@
 import './style.css'
 
 // ⚠️ REPLACE WITH YOUR API GATEWAY URL FROM STEP 4
-const API_URL = 'https://iq1veb8vef.execute-api.us-east-1.amazonaws.com/prod'
+const API_URL = 'https://a1b2c3d4e5.execute-api.us-east-1.amazonaws.com/prod/tasks'
+
 
 type Priority = 'low' | 'medium' | 'high'
 type Category = 'work' | 'personal' | 'urgent'

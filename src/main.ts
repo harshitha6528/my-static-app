@@ -1,6 +1,6 @@
 import './style.css'
 
-// Your Active API Gateway Endpoint
+// Your Active AWS API Gateway Endpoint
 const API_URL = 'https://43fqtrb7mg.execute-api.us-east-1.amazonaws.com/prod/tasks'
 
 type Priority = 'low' | 'medium' | 'high'
@@ -71,20 +71,23 @@ function clearError() {
   errorBanner.textContent = ''
 }
 
-// Fetch all tasks from AWS
+// 1. GET - Fetch all tasks safely
 async function fetchTasks() {
   clearError()
   try {
     const res = await fetch(API_URL)
     if (!res.ok) throw new Error(`HTTP ${res.status}: Failed to retrieve tasks`)
-    tasks = await res.json()
+    const data = await res.json()
+    
+    // Ensure array format even if backend returns an object wrapper
+    tasks = Array.isArray(data) ? data : (data.Items || [])
     renderTasks()
   } catch (err: any) {
     showError(err.message || 'Failed to connect to backend')
   }
 }
 
-// Render task items to list
+// 2. RENDER - Display list on screen
 function renderTasks() {
   list.innerHTML = ''
   tasks.forEach((task) => {
@@ -107,9 +110,9 @@ function renderTasks() {
   })
 }
 
-// Form Submit Handler (with e.preventDefault() to block auto-delete reload)
+// 3. POST - Form submit handler (PREVENTS PAGE RELOAD / DISAPPEARING)
 form.addEventListener('submit', async (e: Event) => {
-  e.preventDefault()
+  e.preventDefault() // 👈 CRITICAL: Prevents auto-refresh page wipe
   
   const taskText = input.value.trim()
   if (!taskText) return
@@ -137,15 +140,16 @@ form.addEventListener('submit', async (e: Event) => {
     })
 
     if (!res.ok) throw new Error(`HTTP ${res.status}: Could not save task`)
+    await fetchTasks() // Re-sync with backend
   } catch (err: any) {
     showError(err.message)
-    // Revert UI if post failed
+    // Revert UI if POST failed
     tasks = tasks.filter((t) => t.id !== newTask.id)
     renderTasks()
   }
 })
 
-// Toggle completion state
+// 4. PUT/POST - Toggle checkbox state
 ;(window as any).toggleTask = async (id: string) => {
   clearError()
   const task = tasks.find((t) => t.id === id)
@@ -168,7 +172,7 @@ form.addEventListener('submit', async (e: Event) => {
   }
 }
 
-// Delete task
+// 5. DELETE - Remove task
 ;(window as any).removeTask = async (id: string) => {
   clearError()
   const previousTasks = [...tasks]

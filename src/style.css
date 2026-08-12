@@ -4,7 +4,7 @@ import './style.css'
 const API_URL = import './style.css'
 
 // Paste your full API Gateway URL here
-const API_URL = 'https://a1b2c3d4e5.execute-api.us-east-1.amazonaws.com/prod/tasks'
+const API_URL = 'https://iq1veb8vef.execute-api.us-east-1.amazonaws.com/prods'
 type Priority = 'low' | 'medium' | 'high'
 type Category = 'work' | 'personal' | 'urgent'
 

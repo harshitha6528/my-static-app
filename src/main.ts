@@ -1,9 +1,6 @@
 import './style.css'
 
-// ⚠️ REPLACE THIS WITH YOUR EXACT API GATEWAY INVOKE URL
-const API_URL = 'import './style.css'
-
-// ⚠️ REPLACE THIS WITH YOUR EXACT API GATEWAY INVOKE URL
+// Your Active API Gateway Endpoint
 const API_URL = 'https://43fqtrb7mg.execute-api.us-east-1.amazonaws.com/prod/tasks'
 
 type Priority = 'low' | 'medium' | 'high'
@@ -20,7 +17,7 @@ interface Task {
 
 let tasks: Task[] = []
 
-// Render Base HTML Layout
+// Inject HTML UI into app root
 document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
   <div class="container">
     <div class="header-row">
@@ -30,35 +27,37 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
       </div>
     </div>
 
-    <div id="error-banner" style="display:none; background:#ef4444; color:#fff; padding:0.6rem; border-radius:6px; margin-bottom:1rem; font-size:0.85rem; text-align:left;"></div>
+    <div id="error-banner" style="display:none; background:#ef4444; color:#fff; padding:0.6rem; border-radius:6px; margin-bottom:1rem; font-size:0.85rem;"></div>
 
-    <div class="input-group">
-      <input type="text" id="task-input" placeholder="Enter task title..." />
-    </div>
+    <form id="task-form">
+      <div class="input-group">
+        <input type="text" id="task-input" placeholder="Enter task title..." required />
+      </div>
 
-    <div class="meta-group">
-      <select id="priority-select">
-        <option value="low">🟢 Low</option>
-        <option value="medium" selected>🟡 Medium</option>
-        <option value="high">🔴 High</option>
-      </select>
-      <select id="category-select">
-        <option value="work" selected>💼 Work</option>
-        <option value="personal">👤 Personal</option>
-        <option value="urgent">⚡ Urgent</option>
-      </select>
-      <button id="add-btn">Add Task</button>
-    </div>
+      <div class="meta-group">
+        <select id="priority-select">
+          <option value="low">🟢 Low</option>
+          <option value="medium" selected>🟡 Medium</option>
+          <option value="high">🔴 High</option>
+        </select>
+        <select id="category-select">
+          <option value="work" selected>💼 Work</option>
+          <option value="personal">👤 Personal</option>
+          <option value="urgent">⚡ Urgent</option>
+        </select>
+        <button type="submit" id="add-btn">Add Task</button>
+      </div>
+    </form>
 
     <ul id="task-list"></ul>
   </div>
 `
 
-// DOM Element References
+// DOM Elements
+const form = document.getElementById('task-form') as HTMLFormElement
 const input = document.getElementById('task-input') as HTMLInputElement
 const prioritySelect = document.getElementById('priority-select') as HTMLSelectElement
 const categorySelect = document.getElementById('category-select') as HTMLSelectElement
-const addBtn = document.getElementById('add-btn') as HTMLButtonElement
 const list = document.getElementById('task-list') as HTMLUListElement
 const errorBanner = document.getElementById('error-banner') as HTMLDivElement
 
@@ -72,14 +71,12 @@ function clearError() {
   errorBanner.textContent = ''
 }
 
-// 1. Fetch all tasks from AWS DynamoDB via API Gateway
+// Fetch all tasks from AWS
 async function fetchTasks() {
   clearError()
   try {
     const res = await fetch(API_URL)
-    if (!res.ok) {
-      throw new Error(`HTTP ${res.status}: Failed to retrieve tasks`)
-    }
+    if (!res.ok) throw new Error(`HTTP ${res.status}: Failed to retrieve tasks`)
     tasks = await res.json()
     renderTasks()
   } catch (err: any) {
@@ -87,7 +84,7 @@ async function fetchTasks() {
   }
 }
 
-// 2. Render tasks to screen
+// Render task items to list
 function renderTasks() {
   list.innerHTML = ''
   tasks.forEach((task) => {
@@ -110,8 +107,10 @@ function renderTasks() {
   })
 }
 
-// 3. Add a new task (POST to API Gateway)
-addBtn.addEventListener('click', async () => {
+// Form Submit Handler (with e.preventDefault() to block auto-delete reload)
+form.addEventListener('submit', async (e: Event) => {
+  e.preventDefault()
+  
   const taskText = input.value.trim()
   if (!taskText) return
   clearError()
@@ -125,6 +124,11 @@ addBtn.addEventListener('click', async () => {
     createdAt: Date.now()
   }
 
+  // Optimistic UI update
+  tasks.push(newTask)
+  renderTasks()
+  input.value = ''
+
   try {
     const res = await fetch(API_URL, {
       method: 'POST',
@@ -132,215 +136,45 @@ addBtn.addEventListener('click', async () => {
       body: JSON.stringify(newTask)
     })
 
-    if (!res.ok) {
-      throw new Error(`HTTP ${res.status}: Could not save task`)
-    }
-
-    input.value = ''
-    await fetchTasks()
+    if (!res.ok) throw new Error(`HTTP ${res.status}: Could not save task`)
   } catch (err: any) {
     showError(err.message)
-  }
-})
-
-// 4. Toggle completion state (POST update)
-;(window as any).toggleTask = async (id: string) => {
-  clearError()
-  const task = tasks.find((t) => t.id === id)
-  if (!task) return
-
-  task.completed = !task.completed
-  try {
-    const res = await fetch(API_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(task)
-    })
-    if (!res.ok) throw new Error(`HTTP ${res.status}: Toggle update failed`)
-    await fetchTasks()
-  } catch (err: any) {
-    showError(err.message)
-  }
-}
-
-// 5. Delete task (DELETE request)
-;(window as any).removeTask = async (id: string) => {
-  clearError()
-  try {
-    const res = await fetch(API_URL, {
-      method: 'DELETE',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ id })
-    })
-    if (!res.ok) throw new Error(`HTTP ${res.status}: Delete failed`)
-    await fetchTasks()
-  } catch (err: any) {
-    showError(err.message)
-  }
-}
-
-// Initial fetch on page load
-fetchTasks()
-type Priority = 'low' | 'medium' | 'high'
-type Category = 'work' | 'personal' | 'urgent'
-
-interface Task {
-  id: string
-  text: string
-  completed: boolean
-  priority: Priority
-  category: Category
-  createdAt: number
-}
-
-let tasks: Task[] = []
-
-// Render Base HTML Layout
-document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
-  <div class="container">
-    <div class="header-row">
-      <div>
-        <h1>🚀 Project Launch Pad</h1>
-        <p class="subtitle">AWS Lambda + DynamoDB Cloud Backend</p>
-      </div>
-    </div>
-
-    <div id="error-banner" style="display:none; background:#ef4444; color:#fff; padding:0.6rem; border-radius:6px; margin-bottom:1rem; font-size:0.85rem; text-align:left;"></div>
-
-    <div class="input-group">
-      <input type="text" id="task-input" placeholder="Enter task title..." />
-    </div>
-
-    <div class="meta-group">
-      <select id="priority-select">
-        <option value="low">🟢 Low</option>
-        <option value="medium" selected>🟡 Medium</option>
-        <option value="high">🔴 High</option>
-      </select>
-      <select id="category-select">
-        <option value="work" selected>💼 Work</option>
-        <option value="personal">👤 Personal</option>
-        <option value="urgent">⚡ Urgent</option>
-      </select>
-      <button id="add-btn">Add Task</button>
-    </div>
-
-    <ul id="task-list"></ul>
-  </div>
-`
-
-// DOM Element References
-const input = document.getElementById('task-input') as HTMLInputElement
-const prioritySelect = document.getElementById('priority-select') as HTMLSelectElement
-const categorySelect = document.getElementById('category-select') as HTMLSelectElement
-const addBtn = document.getElementById('add-btn') as HTMLButtonElement
-const list = document.getElementById('task-list') as HTMLUListElement
-const errorBanner = document.getElementById('error-banner') as HTMLDivElement
-
-function showError(msg: string) {
-  errorBanner.style.display = 'block'
-  errorBanner.textContent = `⚠️ Error: ${msg}`
-}
-
-function clearError() {
-  errorBanner.style.display = 'none'
-  errorBanner.textContent = ''
-}
-
-// 1. Fetch all tasks from AWS DynamoDB via API Gateway
-async function fetchTasks() {
-  clearError()
-  try {
-    const res = await fetch(API_URL)
-    if (!res.ok) {
-      throw new Error(`HTTP ${res.status}: Failed to retrieve tasks`)
-    }
-    tasks = await res.json()
+    // Revert UI if post failed
+    tasks = tasks.filter((t) => t.id !== newTask.id)
     renderTasks()
-  } catch (err: any) {
-    showError(err.message || 'Failed to connect to backend')
-  }
-}
-
-// 2. Render tasks to screen
-function renderTasks() {
-  list.innerHTML = ''
-  tasks.forEach((task) => {
-    const li = document.createElement('li')
-    li.className = task.completed ? 'completed' : ''
-    
-    const priorityIcon = task.priority === 'high' ? '🔴' : task.priority === 'medium' ? '🟡' : '🟢'
-    const categoryIcon = task.category === 'urgent' ? '⚡' : task.category === 'personal' ? '👤' : '💼'
-
-    li.innerHTML = `
-      <div class="task-content">
-        <input type="checkbox" ${task.completed ? 'checked' : ''} onchange="toggleTask('${task.id}')" />
-        <span>${task.text}</span>
-        <span class="badge">${priorityIcon} ${task.priority}</span>
-        <span class="badge">${categoryIcon} ${task.category}</span>
-      </div>
-      <button class="delete-btn" onclick="removeTask('${task.id}')">❌</button>
-    `
-    list.appendChild(li)
-  })
-}
-
-// 3. Add a new task (POST to API Gateway)
-addBtn.addEventListener('click', async () => {
-  const taskText = input.value.trim()
-  if (!taskText) return
-  clearError()
-
-  const newTask: Task = {
-    id: Date.now().toString(),
-    text: taskText,
-    completed: false,
-    priority: prioritySelect.value as Priority,
-    category: categorySelect.value as Category,
-    createdAt: Date.now()
-  }
-
-  try {
-    const res = await fetch(API_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(newTask)
-    })
-
-    if (!res.ok) {
-      throw new Error(`HTTP ${res.status}: Could not save task`)
-    }
-
-    input.value = ''
-    await fetchTasks()
-  } catch (err: any) {
-    showError(err.message)
   }
 })
 
-// 4. Toggle completion state (POST update)
+// Toggle completion state
 ;(window as any).toggleTask = async (id: string) => {
   clearError()
   const task = tasks.find((t) => t.id === id)
   if (!task) return
 
   task.completed = !task.completed
+  renderTasks()
+
   try {
     const res = await fetch(API_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(task)
     })
-    if (!res.ok) throw new Error(`HTTP ${res.status}: Toggle update failed`)
-    await fetchTasks()
+    if (!res.ok) throw new Error(`HTTP ${res.status}: Toggle failed`)
   } catch (err: any) {
     showError(err.message)
+    task.completed = !task.completed
+    renderTasks()
   }
 }
 
-// 5. Delete task (DELETE request)
+// Delete task
 ;(window as any).removeTask = async (id: string) => {
   clearError()
+  const previousTasks = [...tasks]
+  tasks = tasks.filter((t) => t.id !== id)
+  renderTasks()
+
   try {
     const res = await fetch(API_URL, {
       method: 'DELETE',
@@ -348,9 +182,10 @@ addBtn.addEventListener('click', async () => {
       body: JSON.stringify({ id })
     })
     if (!res.ok) throw new Error(`HTTP ${res.status}: Delete failed`)
-    await fetchTasks()
   } catch (err: any) {
     showError(err.message)
+    tasks = previousTasks
+    renderTasks()
   }
 }
 

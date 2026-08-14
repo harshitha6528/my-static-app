@@ -1,6 +1,5 @@
 import './style.css'
 
-// Direct Endpoint pointing to /tasks resource
 const API_URL = 'https://iq1veb8vef.execute-api.us-east-1.amazonaws.com/prod/tasks'
 
 type Priority = 'low' | 'medium' | 'high'
@@ -17,53 +16,108 @@ interface Task {
 
 let tasks: Task[] = []
 
-// Inject HTML UI
+// Dashboard Layout with Sidebar, Header & Content Grid
 document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
-  <div class="container">
-    <div class="header-row">
-      <div>
-        <h1>🚀 Project Launch Pad</h1>
-        <p class="subtitle">AWS Lambda + DynamoDB Cloud Backend</p>
+  <div class="dashboard-layout">
+    <aside class="sidebar">
+      <div class="sidebar-brand">
+        <span class="brand-icon">⚡</span>
+        <span class="brand-name">Project Launch Pad</span>
       </div>
-    </div>
-
-    <div id="error-banner" style="display:none; background:#ef4444; color:#fff; padding:0.6rem; border-radius:6px; margin-bottom:1rem; font-size:0.85rem;"></div>
-
-    <div class="task-input-container">
-      <div class="input-group">
-        <input type="text" id="task-input" placeholder="Enter task title..." />
+      <nav class="sidebar-menu">
+        <a href="#" class="nav-item active"><span class="nav-icon">📋</span> Dashboard</a>
+        <a href="#" class="nav-item"><span class="nav-icon">📊</span> Metrics</a>
+        <a href="#" class="nav-item"><span class="nav-icon">📁</span> Projects</a>
+        <a href="#" class="nav-item"><span class="nav-icon">☁️</span> AWS Services</a>
+        <a href="#" class="nav-item"><span class="nav-icon">⚙️</span> Settings</a>
+      </nav>
+      <div class="sidebar-footer">
+        <div class="user-avatar">👤</div>
+        <div class="user-info">
+          <span class="user-name">Developer Admin</span>
+          <span class="user-role">AWS Cloud Architect</span>
+        </div>
       </div>
+    </aside>
 
-      <div class="meta-group">
-        <select id="priority-select">
-          <option value="low">🟢 Low</option>
-          <option value="medium" selected>🟡 Medium</option>
-          <option value="high">🔴 High</option>
-        </select>
-        <select id="category-select">
-          <option value="work" selected>💼 Work</option>
-          <option value="personal">👤 Personal</option>
-          <option value="urgent">⚡ Urgent</option>
-        </select>
-        <button type="button" id="add-btn">Add Task</button>
-      </div>
-    </div>
+    <main class="main-content">
+      <header class="top-nav">
+        <div class="search-box">
+          <span class="search-icon">🔍</span>
+          <input type="text" id="task-search" placeholder="Search tasks, parameters, or logs..." />
+        </div>
+        <div class="top-actions">
+          <button class="icon-btn" title="Notifications">🔔</button>
+          <button class="btn btn-outline">Documentation</button>
+          <div class="account-pill">
+            <span class="status-dot"></span>
+            <span>Cloud Connected</span>
+          </div>
+        </div>
+      </header>
 
-    <ul id="task-list"></ul>
+      <section class="workspace">
+        <div class="page-title-row">
+          <div>
+            <h2>Project Launch Pad</h2>
+            <p class="subtitle">Real-time AWS Lambda + DynamoDB Cloud Pipeline Engine</p>
+          </div>
+        </div>
+
+        <div id="error-banner" class="alert alert-error" style="display: none;"></div>
+
+        <div class="creator-card">
+          <div class="creator-header">
+            <h3>Quick Task Dispatcher</h3>
+          </div>
+          <div class="creator-body">
+            <div class="form-row">
+              <input type="text" id="task-input" class="form-control" placeholder="Enter task title or API command (e.g., Verify AWS Integration)..." />
+              <button type="button" id="add-btn" class="btn btn-primary">Dispatch Task</button>
+            </div>
+            <div class="form-meta-row">
+              <div class="meta-field">
+                <label>Priority</label>
+                <select id="priority-select" class="form-select">
+                  <option value="low">🟢 Low</option>
+                  <option value="medium" selected>🟡 Medium</option>
+                  <option value="high">🔴 High</option>
+                </select>
+              </div>
+              <div class="meta-field">
+                <label>Category</label>
+                <select id="category-select" class="form-select">
+                  <option value="work" selected>💼 Work</option>
+                  <option value="personal">👤 Personal</option>
+                  <option value="urgent">⚡ Urgent</option>
+                </select>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="task-list-header">
+          <span class="count-badge" id="task-count">0 Tasks Staged</span>
+        </div>
+        <div id="task-card-container" class="task-grid"></div>
+      </section>
+    </main>
   </div>
 `
 
 // DOM Elements
 const input = document.getElementById('task-input') as HTMLInputElement
+const searchInput = document.getElementById('task-search') as HTMLInputElement
 const prioritySelect = document.getElementById('priority-select') as HTMLSelectElement
 const categorySelect = document.getElementById('category-select') as HTMLSelectElement
 const addBtn = document.getElementById('add-btn') as HTMLButtonElement
-const list = document.getElementById('task-list') as HTMLUListElement
+const taskGrid = document.getElementById('task-card-container') as HTMLDivElement
+const taskCount = document.getElementById('task-count') as HTMLSpanElement
 const errorBanner = document.getElementById('error-banner') as HTMLDivElement
 
 function showError(msg: string) {
   errorBanner.style.display = 'block'
-  errorBanner.textContent = `⚠️ ${msg}`
+  errorBanner.textContent = `⚠️ Runtime Alert: ${msg}`
 }
 
 function clearError() {
@@ -71,48 +125,80 @@ function clearError() {
   errorBanner.textContent = ''
 }
 
-// 1. Render tasks to screen safely
-function renderTasks() {
-  list.innerHTML = ''
-  
+// Render task list into styled wide dashboard cards
+function renderTasks(filterQuery: string = '') {
+  taskGrid.innerHTML = ''
+
   if (!Array.isArray(tasks)) {
     tasks = []
   }
 
-  tasks.forEach((task) => {
-    const li = document.createElement('li')
-    li.className = task.completed ? 'completed' : ''
+  const filteredTasks = tasks.filter(t => 
+    t.text.toLowerCase().includes(filterQuery.toLowerCase())
+  )
 
-    const priorityIcon = task.priority === 'high' ? '🔴' : task.priority === 'medium' ? '🟡' : '🟢'
-    const categoryIcon = task.category === 'urgent' ? '⚡' : task.category === 'personal' ? '👤' : '💼'
+  taskCount.textContent = `${filteredTasks.length} ${filteredTasks.length === 1 ? 'Task' : 'Tasks'} Synchronized`
 
-    li.innerHTML = `
-      <div class="task-content">
-        <input type="checkbox" ${task.completed ? 'checked' : ''} id="check-${task.id}" />
-        <span>${task.text}</span>
-        <span class="badge">${priorityIcon} ${task.priority}</span>
-        <span class="badge">${categoryIcon} ${task.category}</span>
+  if (filteredTasks.length === 0) {
+    taskGrid.innerHTML = `
+      <div class="empty-state">
+        <p>No active cloud tasks found. Use the Dispatcher above to add your first item.</p>
       </div>
-      <button class="delete-btn" id="del-${task.id}">❌</button>
+    `
+    return
+  }
+
+  filteredTasks.forEach((task) => {
+    const card = document.createElement('div')
+    card.className = `task-card ${task.completed ? 'completed' : ''}`
+
+    const priorityClass = `pill-priority-${task.priority}`
+    const categoryClass = `pill-category-${task.category}`
+    const jsonSnippet = JSON.stringify({ text: task.text, priority: task.priority, category: task.category }, null, 2)
+
+    card.innerHTML = `
+      <div class="card-left">
+        <input type="checkbox" class="task-checkbox" ${task.completed ? 'checked' : ''} id="check-${task.id}" />
+        <div class="task-detail-block">
+          <div class="task-title-line">
+            <span class="task-title-text">${task.text}</span>
+            <span class="status-pill ${task.completed ? 'pill-done' : 'pill-active'}">${task.completed ? 'Done' : 'Active'}</span>
+          </div>
+          <pre class="task-json-snippet"><code>${jsonSnippet}</code></pre>
+        </div>
+      </div>
+
+      <div class="card-right">
+        <div class="pill-group">
+          <div class="meta-pill-block">
+            <span class="pill-label">Priority</span>
+            <span class="meta-pill ${priorityClass}">${task.priority.toUpperCase()}</span>
+          </div>
+          <div class="meta-pill-block">
+            <span class="pill-label">Category</span>
+            <span class="meta-pill ${categoryClass}">${task.category.toUpperCase()}</span>
+          </div>
+        </div>
+        <button class="delete-icon-btn" id="del-${task.id}" title="Delete Record">🗑️</button>
+      </div>
     `
 
-    // Add event listeners directly
-    const checkbox = li.querySelector(`#check-${task.id}`) as HTMLInputElement
+    const checkbox = card.querySelector(`#check-${task.id}`) as HTMLInputElement
     checkbox.addEventListener('change', () => toggleTask(task.id))
 
-    const deleteBtn = li.querySelector(`#del-${task.id}`) as HTMLButtonElement
+    const deleteBtn = card.querySelector(`#del-${task.id}`) as HTMLButtonElement
     deleteBtn.addEventListener('click', () => removeTask(task.id))
 
-    list.appendChild(li)
+    taskGrid.appendChild(card)
   })
 }
 
-// 2. GET Request: Fetch tasks
+// API: Fetch tasks from API Gateway
 async function fetchTasks() {
   clearError()
   try {
     const res = await fetch(API_URL)
-    if (!res.ok) throw new Error(`HTTP ${res.status}: Failed to retrieve tasks`)
+    if (!res.ok) throw new Error(`HTTP ${res.status}: Failed to retrieve database records`)
     const data = await res.json()
     
     if (Array.isArray(data)) {
@@ -122,13 +208,13 @@ async function fetchTasks() {
     } else {
       tasks = []
     }
-    renderTasks()
+    renderTasks(searchInput.value)
   } catch (err: any) {
-    showError(err.message || 'Backend connection failed')
+    showError(err.message || 'Error connecting to AWS API Gateway')
   }
 }
 
-// 3. POST Request: Add new task
+// API: Add task
 async function handleAddTask() {
   const taskText = input.value.trim()
   if (!taskText) return
@@ -143,9 +229,8 @@ async function handleAddTask() {
     createdAt: Date.now()
   }
 
-  // Display immediately on screen
-  tasks.push(newTask)
-  renderTasks()
+  tasks.unshift(newTask)
+  renderTasks(searchInput.value)
   input.value = ''
 
   try {
@@ -154,13 +239,12 @@ async function handleAddTask() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(newTask)
     })
-
-    if (!res.ok) throw new Error(`HTTP ${res.status}: Could not save task`)
+    if (!res.ok) throw new Error(`HTTP ${res.status}: Could not write to DynamoDB`)
     await fetchTasks()
   } catch (err: any) {
     showError(err.message)
     tasks = tasks.filter((t) => t.id !== newTask.id)
-    renderTasks()
+    renderTasks(searchInput.value)
   }
 }
 
@@ -169,14 +253,18 @@ input.addEventListener('keydown', (e) => {
   if (e.key === 'Enter') handleAddTask()
 })
 
-// 4. Toggle completion state
+searchInput.addEventListener('input', (e) => {
+  renderTasks((e.target as HTMLInputElement).value)
+})
+
+// API: Toggle completion
 async function toggleTask(id: string) {
   clearError()
   const task = tasks.find((t) => t.id === id)
   if (!task) return
 
   task.completed = !task.completed
-  renderTasks()
+  renderTasks(searchInput.value)
 
   try {
     const res = await fetch(API_URL, {
@@ -184,20 +272,20 @@ async function toggleTask(id: string) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(task)
     })
-    if (!res.ok) throw new Error(`HTTP ${res.status}: Toggle failed`)
+    if (!res.ok) throw new Error(`HTTP ${res.status}: Update sync failed`)
   } catch (err: any) {
     showError(err.message)
     task.completed = !task.completed
-    renderTasks()
+    renderTasks(searchInput.value)
   }
 }
 
-// 5. DELETE Request: Remove task
+// API: Delete task
 async function removeTask(id: string) {
   clearError()
   const previousTasks = [...tasks]
   tasks = tasks.filter((t) => t.id !== id)
-  renderTasks()
+  renderTasks(searchInput.value)
 
   try {
     const res = await fetch(API_URL, {
@@ -205,13 +293,12 @@ async function removeTask(id: string) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ id })
     })
-    if (!res.ok) throw new Error(`HTTP ${res.status}: Delete failed`)
+    if (!res.ok) throw new Error(`HTTP ${res.status}: Delete request failed`)
   } catch (err: any) {
     showError(err.message)
     tasks = previousTasks
-    renderTasks()
+    renderTasks(searchInput.value)
   }
 }
 
-// Initial fetch on page load
 fetchTasks()

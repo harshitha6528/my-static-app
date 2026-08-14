@@ -1,11 +1,11 @@
 :root {
   font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   color-scheme: light;
-  --bg-main: #f1f5f9;
+  --bg-main: #f8fafc;
   --sidebar-bg: #1e293b;
   --sidebar-hover: #334155;
   --sidebar-text: #94a3b8;
-  --sidebar-active: #3b82f6;
+  --sidebar-active: #2563eb;
   --card-bg: #ffffff;
   --card-border: #e2e8f0;
   --text-main: #0f172a;
@@ -40,7 +40,7 @@ body {
   min-height: 100vh;
 }
 
-/* Sidebar Styles */
+/* Sidebar */
 .sidebar {
   width: 260px;
   background-color: var(--sidebar-bg);
@@ -125,7 +125,7 @@ body {
   color: #94a3b8;
 }
 
-/* Main Content Styles */
+/* Main Workspace */
 .main-content {
   flex: 1;
   display: flex;
@@ -195,7 +195,6 @@ body {
   background: var(--accent-green);
 }
 
-/* Workspace Panels */
 .workspace {
   padding: 2rem;
   max-width: 1100px;
@@ -229,7 +228,7 @@ body {
   font-size: 0.85rem;
 }
 
-/* Creator Card */
+/* Cards & Forms */
 .creator-card {
   background: var(--card-bg);
   border: 1px solid var(--card-border);
@@ -317,7 +316,7 @@ body {
   cursor: pointer;
 }
 
-/* Task List Cards */
+/* Task Cards */
 .task-list-header {
   margin-bottom: 1rem;
 }
@@ -440,35 +439,12 @@ body {
   letter-spacing: 0.03em;
 }
 
-.pill-priority-high {
-  background: #ffe4e6;
-  color: #be123c;
-}
-
-.pill-priority-medium {
-  background: #fef3c7;
-  color: #b45309;
-}
-
-.pill-priority-low {
-  background: #dcfce7;
-  color: #15803d;
-}
-
-.pill-category-work {
-  background: #e0e7ff;
-  color: #4338ca;
-}
-
-.pill-category-personal {
-  background: #f3e8ff;
-  color: #7e22ce;
-}
-
-.pill-category-urgent {
-  background: #ffedd5;
-  color: #c2410c;
-}
+.pill-priority-high { background: #ffe4e6; color: #be123c; }
+.pill-priority-medium { background: #fef3c7; color: #b45309; }
+.pill-priority-low { background: #dcfce7; color: #15803d; }
+.pill-category-work { background: #e0e7ff; color: #4338ca; }
+.pill-category-personal { background: #f3e8ff; color: #7e22ce; }
+.pill-category-urgent { background: #ffedd5; color: #c2410c; }
 
 .status-pill {
   font-size: 0.65rem;
@@ -478,21 +454,14 @@ body {
   text-transform: uppercase;
 }
 
-.pill-done {
-  background: #e2e8f0;
-  color: #475569;
-}
-
-.pill-active {
-  background: #dbeafe;
-  color: #1e40af;
-}
+.pill-done { background: #e2e8f0; color: #475569; }
+.pill-active { background: #dbeafe; color: #1e40af; }
 
 .delete-icon-btn {
   background: transparent;
   border: none;
   cursor: pointer;
-  font-size: 1rem;
+  font-size: 1.1rem;
   opacity: 0.6;
   transition: opacity 0.15s, transform 0.1s;
 }
@@ -500,6 +469,149 @@ body {
 .delete-icon-btn:hover {
   opacity: 1;
   transform: scale(1.15);
+}
+
+/* Metrics Views */
+.metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+}
+
+.metric-card {
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  padding: 1.25rem;
+  border-radius: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.metric-label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.metric-value {
+  font-size: 1.75rem;
+  font-weight: 800;
+}
+
+.text-blue { color: var(--primary-blue); }
+.text-green { color: var(--accent-green); }
+.text-red { color: var(--accent-rose); }
+
+.progress-bar-container {
+  background: var(--bg-main);
+  border-radius: 8px;
+  height: 12px;
+  width: 100%;
+  overflow: hidden;
+  margin-top: 0.75rem;
+}
+
+.progress-bar-fill {
+  background: var(--accent-green);
+  height: 100%;
+  border-radius: 8px;
+  transition: width 0.3s ease;
+}
+
+/* Project Cards */
+.project-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 1.25rem;
+}
+
+.project-card {
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  border-radius: 10px;
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.project-header {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.project-tag {
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  background: #dcfce7;
+  color: #15803d;
+  padding: 0.15rem 0.4rem;
+  border-radius: 4px;
+  width: fit-content;
+}
+
+.tag-blue {
+  background: #dbeafe;
+  color: #1e40af;
+}
+
+.project-desc {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+
+.project-footer {
+  display: flex;
+  justify-content: space-between;
+  border-top: 1px solid var(--card-border);
+  padding-top: 0.75rem;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+/* AWS Infrastructure Status */
+.aws-status-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+.aws-status-row {
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  padding: 1rem 1.25rem;
+  border-radius: 10px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.service-name {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.service-name p {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+.service-icon {
+  font-size: 1.5rem;
+}
+
+.badge-status-online {
+  font-size: 0.8rem;
+  font-weight: 700;
+  background: #f0fdf4;
+  color: #166534;
+  border: 1px solid #bbf7d0;
+  padding: 0.3rem 0.75rem;
+  border-radius: 20px;
 }
 
 .empty-state {

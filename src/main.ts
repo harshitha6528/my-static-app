@@ -1,7 +1,7 @@
 import './style.css'
 
-// Your Active AWS API Gateway Endpoint
-const API_URL = 'https://43fqtrb7mg.execute-api.us-east-1.amazonaws.com/prod/tasks'
+// Direct Endpoint based on your API Gateway URL
+const API_URL = 'https://iq1veb8vef.execute-api.us-east-1.amazonaws.com/prod/tasks'
 
 type Priority = 'low' | 'medium' | 'high'
 type Category = 'work' | 'personal' | 'urgent'
@@ -17,7 +17,7 @@ interface Task {
 
 let tasks: Task[] = []
 
-// Inject HTML UI into app root
+// Inject Layout into App Root
 document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
   <div class="container">
     <div class="header-row">
@@ -71,15 +71,13 @@ function clearError() {
   errorBanner.textContent = ''
 }
 
-// 1. GET - Fetch all tasks safely
+// 1. GET Request: Fetch tasks from API Gateway
 async function fetchTasks() {
   clearError()
   try {
     const res = await fetch(API_URL)
     if (!res.ok) throw new Error(`HTTP ${res.status}: Failed to retrieve tasks`)
     const data = await res.json()
-    
-    // Ensure array format even if backend returns an object wrapper
     tasks = Array.isArray(data) ? data : (data.Items || [])
     renderTasks()
   } catch (err: any) {
@@ -87,7 +85,7 @@ async function fetchTasks() {
   }
 }
 
-// 2. RENDER - Display list on screen
+// 2. Render tasks array to screen
 function renderTasks() {
   list.innerHTML = ''
   tasks.forEach((task) => {
@@ -110,9 +108,9 @@ function renderTasks() {
   })
 }
 
-// 3. POST - Form submit handler (PREVENTS PAGE RELOAD / DISAPPEARING)
+// 3. POST Request: Submit task without reloading page
 form.addEventListener('submit', async (e: Event) => {
-  e.preventDefault() // 👈 CRITICAL: Prevents auto-refresh page wipe
+  e.preventDefault()
   
   const taskText = input.value.trim()
   if (!taskText) return
@@ -140,16 +138,15 @@ form.addEventListener('submit', async (e: Event) => {
     })
 
     if (!res.ok) throw new Error(`HTTP ${res.status}: Could not save task`)
-    await fetchTasks() // Re-sync with backend
+    await fetchTasks()
   } catch (err: any) {
     showError(err.message)
-    // Revert UI if POST failed
     tasks = tasks.filter((t) => t.id !== newTask.id)
     renderTasks()
   }
 })
 
-// 4. PUT/POST - Toggle checkbox state
+// 4. PUT/POST Request: Toggle completion state
 ;(window as any).toggleTask = async (id: string) => {
   clearError()
   const task = tasks.find((t) => t.id === id)
@@ -172,7 +169,7 @@ form.addEventListener('submit', async (e: Event) => {
   }
 }
 
-// 5. DELETE - Remove task
+// 5. DELETE Request: Remove task
 ;(window as any).removeTask = async (id: string) => {
   clearError()
   const previousTasks = [...tasks]

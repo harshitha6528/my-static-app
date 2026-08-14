@@ -1,6 +1,6 @@
 import './style.css'
 
-// Direct Endpoint based on your API Gateway URL
+// Direct Endpoint pointing to /tasks resource
 const API_URL = 'https://iq1veb8vef.execute-api.us-east-1.amazonaws.com/prod/tasks'
 
 type Priority = 'low' | 'medium' | 'high'
@@ -17,7 +17,7 @@ interface Task {
 
 let tasks: Task[] = []
 
-// Inject Layout into App Root
+// Inject HTML UI
 document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
   <div class="container">
     <div class="header-row">
@@ -29,9 +29,9 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
 
     <div id="error-banner" style="display:none; background:#ef4444; color:#fff; padding:0.6rem; border-radius:6px; margin-bottom:1rem; font-size:0.85rem;"></div>
 
-    <form id="task-form">
+    <div class="task-input-container">
       <div class="input-group">
-        <input type="text" id="task-input" placeholder="Enter task title..." required />
+        <input type="text" id="task-input" placeholder="Enter task title..." />
       </div>
 
       <div class="meta-group">
@@ -45,25 +45,25 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
           <option value="personal">👤 Personal</option>
           <option value="urgent">⚡ Urgent</option>
         </select>
-        <button type="submit" id="add-btn">Add Task</button>
+        <button type="button" id="add-btn">Add Task</button>
       </div>
-    </form>
+    </div>
 
     <ul id="task-list"></ul>
   </div>
 `
 
 // DOM Elements
-const form = document.getElementById('task-form') as HTMLFormElement
 const input = document.getElementById('task-input') as HTMLInputElement
 const prioritySelect = document.getElementById('priority-select') as HTMLSelectElement
 const categorySelect = document.getElementById('category-select') as HTMLSelectElement
+const addBtn = document.getElementById('add-btn') as HTMLButtonElement
 const list = document.getElementById('task-list') as HTMLUListElement
 const errorBanner = document.getElementById('error-banner') as HTMLDivElement
 
 function showError(msg: string) {
   errorBanner.style.display = 'block'
-  errorBanner.textContent = `⚠️ Error: ${msg}`
+  errorBanner.textContent = `⚠️ ${msg}`
 }
 
 function clearError() {
@@ -71,47 +71,65 @@ function clearError() {
   errorBanner.textContent = ''
 }
 
-// 1. GET Request: Fetch tasks from API Gateway
+// 1. Render tasks to screen safely
+function renderTasks() {
+  list.innerHTML = ''
+  
+  if (!Array.isArray(tasks)) {
+    tasks = []
+  }
+
+  tasks.forEach((task) => {
+    const li = document.createElement('li')
+    li.className = task.completed ? 'completed' : ''
+
+    const priorityIcon = task.priority === 'high' ? '🔴' : task.priority === 'medium' ? '🟡' : '🟢'
+    const categoryIcon = task.category === 'urgent' ? '⚡' : task.category === 'personal' ? '👤' : '💼'
+
+    li.innerHTML = `
+      <div class="task-content">
+        <input type="checkbox" ${task.completed ? 'checked' : ''} id="check-${task.id}" />
+        <span>${task.text}</span>
+        <span class="badge">${priorityIcon} ${task.priority}</span>
+        <span class="badge">${categoryIcon} ${task.category}</span>
+      </div>
+      <button class="delete-btn" id="del-${task.id}">❌</button>
+    `
+
+    // Add event listeners directly
+    const checkbox = li.querySelector(`#check-${task.id}`) as HTMLInputElement
+    checkbox.addEventListener('change', () => toggleTask(task.id))
+
+    const deleteBtn = li.querySelector(`#del-${task.id}`) as HTMLButtonElement
+    deleteBtn.addEventListener('click', () => removeTask(task.id))
+
+    list.appendChild(li)
+  })
+}
+
+// 2. GET Request: Fetch tasks
 async function fetchTasks() {
   clearError()
   try {
     const res = await fetch(API_URL)
     if (!res.ok) throw new Error(`HTTP ${res.status}: Failed to retrieve tasks`)
     const data = await res.json()
-    tasks = Array.isArray(data) ? data : (data.Items || [])
+    
+    if (Array.isArray(data)) {
+      tasks = data
+    } else if (data && Array.isArray(data.Items)) {
+      tasks = data.Items
+    } else {
+      tasks = []
+    }
     renderTasks()
   } catch (err: any) {
-    showError(err.message || 'Failed to connect to backend')
+    showError(err.message || 'Backend connection failed')
   }
 }
 
-// 2. Render tasks array to screen
-function renderTasks() {
-  list.innerHTML = ''
-  tasks.forEach((task) => {
-    const li = document.createElement('li')
-    li.className = task.completed ? 'completed' : ''
-    
-    const priorityIcon = task.priority === 'high' ? '🔴' : task.priority === 'medium' ? '🟡' : '🟢'
-    const categoryIcon = task.category === 'urgent' ? '⚡' : task.category === 'personal' ? '👤' : '💼'
-
-    li.innerHTML = `
-      <div class="task-content">
-        <input type="checkbox" ${task.completed ? 'checked' : ''} onchange="toggleTask('${task.id}')" />
-        <span>${task.text}</span>
-        <span class="badge">${priorityIcon} ${task.priority}</span>
-        <span class="badge">${categoryIcon} ${task.category}</span>
-      </div>
-      <button class="delete-btn" onclick="removeTask('${task.id}')">❌</button>
-    `
-    list.appendChild(li)
-  })
-}
-
-// 3. POST Request: Submit task without reloading page
-form.addEventListener('submit', async (e: Event) => {
-  e.preventDefault()
-  
+// 3. POST Request: Add new task
+async function handleAddTask() {
   const taskText = input.value.trim()
   if (!taskText) return
   clearError()
@@ -125,7 +143,7 @@ form.addEventListener('submit', async (e: Event) => {
     createdAt: Date.now()
   }
 
-  // Optimistic UI update
+  // Display immediately on screen
   tasks.push(newTask)
   renderTasks()
   input.value = ''
@@ -144,10 +162,15 @@ form.addEventListener('submit', async (e: Event) => {
     tasks = tasks.filter((t) => t.id !== newTask.id)
     renderTasks()
   }
+}
+
+addBtn.addEventListener('click', handleAddTask)
+input.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') handleAddTask()
 })
 
-// 4. PUT/POST Request: Toggle completion state
-;(window as any).toggleTask = async (id: string) => {
+// 4. Toggle completion state
+async function toggleTask(id: string) {
   clearError()
   const task = tasks.find((t) => t.id === id)
   if (!task) return
@@ -170,7 +193,7 @@ form.addEventListener('submit', async (e: Event) => {
 }
 
 // 5. DELETE Request: Remove task
-;(window as any).removeTask = async (id: string) => {
+async function removeTask(id: string) {
   clearError()
   const previousTasks = [...tasks]
   tasks = tasks.filter((t) => t.id !== id)
